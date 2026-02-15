@@ -1,20 +1,20 @@
 # Log: Plugin development with OpenCV as third-party
 
-This document explains the problem we ran into when using OpenCV as third-party software in the MyDll1 plugin, and how we fixed it from top to bottom.
+This document explains the problem we ran into when using OpenCV as third-party software in the PluginEngine plugin, and how we fixed it from top to bottom.
 
 ---
 
 ## 1. Project setup
 
-- **Goal:** Build a Windows plugin DLL (MyDll1) that uses **OpenCV** as a third-party library to verify the framework.
+- **Goal:** Build a Windows plugin DLL (PluginEngine) that uses **OpenCV** as a third-party library to verify the framework.
 - **Layout:**
-  - `include/` — headers only (`.h`). Public API in `MyDll1_API.h`; no OpenCV types exposed here.
+  - `include/` — headers only (`.h`). Public API in `PluginEngine_API.h`; no OpenCV types exposed here.
   - `src/` — implementation only (`.cpp`). OpenCV is used only in `src/` (e.g. `plugin_impl.cpp`).
   - `docs/` — documentation (build, architecture, API).
-  - `tests/` — test host (MyDll1TestHost) that loads the DLL and calls the API.
+  - `tests/` — test host (PluginEngineTestHost) that loads the DLL and calls the API.
   - `third_party/` — external dependencies. OpenCV is installed or pointed to here.
 
-The plugin exposes a C API (e.g. `MyDll1_GetThirdPartyCheck()`) so the host does not depend on C++ or OpenCV. OpenCV is an implementation detail.
+The plugin exposes a C API (e.g. `PluginEngine_GetThirdPartyCheck()`) so the host does not depend on C++ or OpenCV. OpenCV is an implementation detail.
 
 ---
 
@@ -56,7 +56,7 @@ A script automates this so the pack “gets” the missing `.lib` files without 
 
 - **Script:** `scripts/generate_opencv_import_lib.ps1` (and `scripts/generate_opencv_import_lib.bat` which calls it).
 - **Output:** `third_party\opencv\build\x64\generated_lib\opencv_world410d.lib` and `opencv_world410.lib`.
-- **Project:** `MyDll1.vcxproj` has `build\x64\generated_lib` as the first library directory, so the linker uses these generated `.lib` files.
+- **Project:** `PluginEngine.vcxproj` has `build\x64\generated_lib` as the first library directory, so the linker uses these generated `.lib` files.
 
 **Steps for you:** Run the script once (e.g. from PowerShell at repo root: `.\scripts\generate_opencv_import_lib.ps1`), then rebuild. The “cannot open file … .lib” error goes away once the generated `.lib` files exist and the path is correct.
 
@@ -106,22 +106,22 @@ We wanted to avoid manual download. A script `scripts/download_opencv.sh` downlo
 ### Fix
 
 - **Script:** Uses a temporary `.bat` file with the exact `"path\to\opencv.exe" /D="path\to\third_party\opencv"` so cmd runs the installer with the correct target folder. Paths are converted with `cygpath -w` when running from Git Bash.
-- **Manual fallback:** If the script does not extract correctly, run the downloaded `.exe` by hand and in the GUI set the extraction path to `third_party\opencv` (full path, e.g. `C:\...\MyDll1\third_party\opencv`).
+- **Manual fallback:** If the script does not extract correctly, run the downloaded `.exe` by hand and in the GUI set the extraction path to `third_party\opencv` (full path, e.g. `C:\...\PluginEngine\third_party\opencv`).
 - **Path override:** If OpenCV ends up somewhere else (e.g. `C:\opencv`), use **OpenCV.path.props** and set `OpenCVDir` to that folder so the project still finds headers and DLLs.
 
 Documented in `third_party/README.md`.
 
 ---
 
-## 6. Platform (x64 vs Win32)
+## 6. Platform (x64 only)
 
 ### Issue
 
-Running the test host sometimes produced “not a valid Win32 application.” That usually means the host and the DLL were built for different architectures (e.g. 32-bit host loading 64-bit DLL).
+Running the test host sometimes produced “not a valid application (architecture mismatch).” That usually means the host and the DLL were built for different architectures (e.g. 32-bit host loading 64-bit DLL).
 
 ### Fix
 
-- The solution and projects were restricted to **x64 only** (Win32/x86 removed) so the DLL and test host always match.
+- The solution and projects were restricted to **x64 only** (no 32-bit platform) so the DLL and test host always match.
 - The test host prints a clear message if LoadLibrary fails with error 193 (ERROR_BAD_EXE_FORMAT), telling the user to build both for the same platform.
 
 ---
@@ -135,7 +135,7 @@ Running the test host sometimes produced “not a valid Win32 application.” Th
 | LNK1118 syntax error in '(struct' | Export “name” in `.def` included demangled text like `(struct ...)` | Export name in `.def` is only the first token after RVA (the real symbol); rest of line ignored. |
 | dumpbin not recognized | Script run outside Developer environment | Script uses vswhere to find VS and adds the VC `bin` path so `dumpbin` and `lib` are found. |
 | OpenCV path / extraction | Path or installer behavior | OpenCV.path.props for custom path; download script + manual extract fallback; docs in `third_party/README.md`. |
-| “Not a valid Win32 application” | Architecture mismatch (x86 vs x64) | Solution is x64-only; test host and DLL both built for x64. |
+| “Not a valid application (architecture mismatch)” | Architecture mismatch (x86 vs x64) | Solution is x64-only; test host and DLL both built for x64. |
 
 ---
 

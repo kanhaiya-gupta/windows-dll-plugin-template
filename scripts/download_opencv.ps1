@@ -9,7 +9,7 @@ $OPENCV_EXE = "opencv-$OPENCV_VERSION-windows.exe"
 $DOWNLOAD_URL = "https://sourceforge.net/projects/opencvlibrary/files/$OPENCV_VERSION/$OPENCV_EXE/download"
 
 $RepoRoot = $PSScriptRoot
-if (Test-Path (Join-Path $PSScriptRoot "..\MyDll1.sln")) {
+if (Test-Path (Join-Path $PSScriptRoot "..\PluginEngine.sln")) {
     $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 $TargetDir = Join-Path $RepoRoot "third_party\opencv"

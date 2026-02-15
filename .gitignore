@@ -44,4 +44,4 @@ Desktop.ini
 .DS_Store
 
 # Test host output (same as build)
-MyDll1TestHost/x64/
+PluginEngineTestHost/x64/

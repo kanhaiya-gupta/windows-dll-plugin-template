@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>NativeDll</Keyword>
+    <ProjectGuid>{c4444444-4444-4444-4444-444444444444}</ProjectGuid>
+    <RootNamespace>OfficeAddInCpp</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)addins\OfficeAddInCpp\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)addins\OfficeAddInCpp\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_WINSOCKAPI_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>oleaut32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>OfficeAddInCpp.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;_WINSOCKAPI_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>oleaut32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>OfficeAddInCpp.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="connect\Connect.h" />
+    <ClInclude Include="connect\IDTExtensibility2.h" />
+    <ClInclude Include="plugin_system\IPlugin.h" />
+    <ClInclude Include="plugin_system\PluginHost.h" />
+    <ClInclude Include="plugin_system\Plugins.h" />
+    <ClInclude Include="plugins\common\Plugin_Common.h" />
+    <ClInclude Include="plugins\excel\Plugin_ExcelCharts.h" />
+    <ClInclude Include="plugins\ppt\Plugin_PptExport.h" />
+    <ClInclude Include="plugins\word\Plugin_WordTemplates.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="core\dllmain.cpp" />
+    <ClCompile Include="connect\Connect.cpp" />
+    <ClCompile Include="plugin_system\PluginHost.cpp" />
+    <ClCompile Include="plugin_system\Plugins.cpp" />
+    <ClCompile Include="plugins\common\Plugin_Common.cpp" />
+    <ClCompile Include="plugins\excel\Plugin_ExcelCharts.cpp" />
+    <ClCompile Include="plugins\ppt\Plugin_PptExport.cpp" />
+    <ClCompile Include="plugins\word\Plugin_WordTemplates.cpp" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="CopyEngineDlls" AfterTargets="Build">
+    <PropertyGroup>
+      <_EngineOut>$(SolutionDir)PluginEngine\x64\$(Configuration)</_EngineOut>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_EngineOut)\PluginEngine.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(_EngineOut)\PluginEngine.dll')" />
+    <Copy SourceFiles="$(_EngineOut)\opencv_world410d.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'$(Configuration)'=='Debug' and Exists('$(_EngineOut)\opencv_world410d.dll')" />
+    <Copy SourceFiles="$(_EngineOut)\opencv_world410.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'$(Configuration)'=='Release' and Exists('$(_EngineOut)\opencv_world410.dll')" />
+  </Target>
+</Project>

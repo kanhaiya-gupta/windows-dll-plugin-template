@@ -1,53 +1,55 @@
-# Office add-ins (PowerPoint and Excel)
+# Office add-ins (C++)
 
-This folder contains the **COM add-in** projects that plug the native **MyDll1** DLL into Microsoft PowerPoint and Excel.
+This folder contains the **C++ COM add-in** that plugs the native **PluginEngine** engine into Microsoft PowerPoint and Excel.
 
-## Projects
+**x64 only.** The add-in is built for **x64** only (no Win32). You must use **64-bit Microsoft Office** (PowerPoint, Excel, Word). 32-bit Office cannot load this add-in.
 
-| Project | Description |
-|---------|-------------|
-| **MyDll1Native** | C# P/Invoke wrapper for `MyDll1.dll`. Exposes `GetVersion()`, `Initialize()`, `Shutdown()`, `GetThirdPartyCheck()`. |
-| **PowerPointAddIn** | COM add-in for PowerPoint. Loads the native DLL on connect and shuts it down on disconnect. |
-| **ExcelAddIn** | COM add-in for Excel. Same behavior. |
+## Project: OfficeAddInCpp
 
-All target **.NET Framework 4.8**, **x64** (to load the x64 native DLL).
-
----
+- **One DLL for both apps** — The same `OfficeAddInCpp.dll` is registered as a COM add-in for **PowerPoint** and **Excel** (and optionally Word).
+- **IDTExtensibility2** — Implements OnConnection, OnDisconnection, OnAddInsUpdate, OnStartupComplete, OnBeginShutdown.
+- **Loads the engine** — In OnConnection it loads `PluginEngine.dll` (from the same folder), calls `PluginEngine_Initialize`. In OnDisconnection it calls `PluginEngine_Shutdown` and frees the DLL.
+- **Plugin structure** — Individual plugins are in-process modules implementing **IPlugin** (see `IPlugin.h`). Placeholders:
+  - **Plugin_PptExport** — PPT-specific (placeholder).
+  - **Plugin_ExcelCharts** — Excel-specific (placeholder).
+  - **Plugin_WordTemplates** — Word-specific (placeholder).
+  - **Plugin_Common** — Shared (e.g. About, settings; placeholder).
+  **PluginHost** registers and loads/unloads them on connect/disconnect. Add ribbon and commands inside each plugin’s `OnLoad`/`OnUnload`.
+- **Build** — Depends on **PluginEngine** (engine). Post-build copies `PluginEngine.dll` and OpenCV DLLs into the add-in output folder.
 
 ## Build
 
-### Option A: Visual Studio (recommended for full solution)
+1. In Visual Studio, set the solution platform to **x64** (not Win32). Build **PluginEngine** first (Debug or Release).
+2. Build **OfficeAddInCpp**. Output: `addins\OfficeAddInCpp\x64\Debug\OfficeAddInCpp.dll` (or `x64\Release\`; the engine DLLs are copied there).
 
-1. Open **MyDll1.sln** in Visual Studio 2022.
-2. Select **Debug \| x64** (or Release \| x64).
-3. **Build → Build Solution.**
-
-This builds **MyDll1** (native) first, then **MyDll1Native**, then the add-ins. The add-in projects have a post-build step that **copies** `MyDll1.dll` and the OpenCV DLLs from `MyDll1\x64\Debug` (or Release) into the add-in output folder so Office can load them.
-
-### Option B: dotnet CLI (add-ins only)
-
-You can build the C# add-ins from the command line **without** building the C++ project:
-
-```bash
-# From repo root. Use forward slashes in Git Bash; backslashes are fine in PowerShell/CMD.
-dotnet build addins/MyDll1Native/MyDll1Native.csproj -c Debug -p:Platform=x64
-dotnet build addins/PowerPointAddIn/PowerPointAddIn.csproj -c Debug -p:Platform=x64
-dotnet build addins/ExcelAddIn/ExcelAddIn.csproj -c Debug -p:Platform=x64
-```
-
-- **COM registration at build:** The add-in projects use `RegisterForComInterop=false` so that `dotnet build` works. The .NET Core MSBuild used by the dotnet CLI does **not** support the `RegisterAssembly` task (COM registration). Register the add-in manually with `regasm /codebase` after building (see below).
-- **Copy of native DLLs:** The post-build copy runs only **if** the files exist. If you have not built the native **MyDll1** project (in Visual Studio), `MyDll1.dll` and the OpenCV DLLs will not be in `MyDll1\x64\Debug`, so the copy is skipped and the add-in build still **succeeds**. To get the native DLLs into the add-in output: build the native project in Visual Studio, then rebuild the add-in (in VS or with `dotnet build`).
-
-### Summary
-
-| Build with | Native MyDll1 built first? | Add-in build | Native DLLs in add-in output? |
-|------------|----------------------------|--------------|--------------------------------|
-| Visual Studio, Build Solution | Yes (automatic) | Succeeds | Yes (post-build copy) |
-| dotnet build add-in only | No | Succeeds | No (copy skipped) |
-| dotnet build add-in only | Yes (built in VS earlier) | Succeeds | Yes (copy runs) |
-
----
+Use **Debug | x64** or **Release | x64** only—the project has no Win32 configuration. Same as the engine and test host.
 
 ## Register with Office
 
-Register the add-in DLL with `regasm /codebase`, then add the registry keys under `HKCU\Software\Microsoft\Office\PowerPoint\Addins` (or `...\Excel\Addins`) so Office loads it. See [docs/PPT_EXCEL_ADDINS.md](../docs/PPT_EXCEL_ADDINS.md) for full steps.
+1. **Register the COM DLL** (run as Administrator, or use HKCU registration which the DLL supports):
+   ```cmd
+   regsvr32 "full\path\to\addins\OfficeAddInCpp\x64\Debug\OfficeAddInCpp.dll"
+   ```
+   Or from a command prompt with the add-in folder as current directory:
+   ```cmd
+   regsvr32 OfficeAddInCpp.dll
+   ```
+
+2. **Add Office add-in keys** so PowerPoint and Excel load it:
+   - **PowerPoint:** `HKCU\Software\Microsoft\Office\PowerPoint\Addins\OfficeAddInCpp.Connect`
+     - `Description` (REG_SZ): e.g. "PluginEngine Office Add-in"
+     - `FriendlyName` (REG_SZ): e.g. "PluginEngine Add-in"
+     - `LoadBehavior` (DWORD): 3 (load at startup)
+   - **Excel:** `HKCU\Software\Microsoft\Office\Excel\Addins\OfficeAddInCpp.Connect` — same values.
+
+3. Start **64-bit** PowerPoint or Excel; the add-in should load and call the engine. (If you have 32-bit Office installed, this x64 add-in will not load—use 64-bit Office.)
+
+## Unregister
+
+```cmd
+regsvr32 /u OfficeAddInCpp.dll
+```
+
+Then delete the registry keys under `...\Office\PowerPoint\Addins\OfficeAddInCpp.Connect` and `...\Office\Excel\Addins\OfficeAddInCpp.Connect` if you added them manually.
+
+See [docs/PPT_EXCEL_ADDINS.md](../docs/PPT_EXCEL_ADDINS.md) for more detail.

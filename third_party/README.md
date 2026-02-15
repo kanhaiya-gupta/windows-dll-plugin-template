@@ -1,8 +1,8 @@
 # Third-party dependencies
 
-This folder holds external libraries used by the MyDll1 plugin. Only the **MyDll1** project (DLL) references third_party; the public API in `include/` does not expose third-party types.
+This folder holds external libraries used by the PluginEngine plugin. Only the **PluginEngine** project (DLL) references third_party; the public API in `include/` does not expose third-party types.
 
-**Current third-party:** **OpenCV** — used in `MyDll1_GetThirdPartyCheck()` to verify the framework. The build requires OpenCV; see "OpenCV" below for setup.
+**Current third-party:** **OpenCV** — used in `PluginEngine_GetThirdPartyCheck()` to verify the framework. The build requires OpenCV; see "OpenCV" below for setup.
 
 ---
 
@@ -17,8 +17,8 @@ When integrating OpenCV we hit the issues below. Use this as a reference if you 
 | **LNK1118: syntax error in '(struct'** (or similar in .def) | The `.def` contained demangled C++ text (e.g. `(struct ...)`) which is invalid in a .def file. | Same as above: the script writes only the real symbol name (e.g. `??0Mat@cv@@QEAA@XZ`) into the `.def`, not the rest of the line. |
 | **'dumpbin' is not recognized** | `dumpbin` is only on PATH in a "Developer" or "x64 Native Tools" command prompt. | The generate script uses `vswhere` to find Visual Studio and adds the VC `bin` folder to PATH, so you can run it from **any** PowerShell (or via the `.bat`). |
 | **Cannot find OpenCV headers / wrong path** | OpenCV was extracted elsewhere, or path has spaces/special chars. | Use **OpenCV.path.props**: copy `OpenCV.path.props.example` to `OpenCV.path.props` and set `OpenCVDir` to your OpenCV **root** (the folder that contains `build`). |
-| **OpenCV installer didn't extract to the right folder** | The download script runs the `.exe` with `/D=...`; some installers ignore it. | Run the downloaded `.exe` manually and in the GUI choose the install path: `third_party\opencv` (full path e.g. `C:\...\MyDll1\third_party\opencv`). Or extract elsewhere and set `OpenCVDir` in OpenCV.path.props. |
-| **"Not a valid Win32 application"** when loading the DLL | Architecture mismatch: 32-bit host loading 64-bit DLL (or vice versa). | This solution is **x64 only**. Build both the plugin and the test host for **x64** (Debug or Release). |
+| **OpenCV installer didn't extract to the right folder** | The download script runs the `.exe` with `/D=...`; some installers ignore it. | Run the downloaded `.exe` manually and in the GUI choose the install path: `third_party\opencv` (full path e.g. `<repo_root>\third_party\opencv`). Or extract elsewhere and set `OpenCVDir` in OpenCV.path.props. |
+| **Architecture mismatch** when loading the DLL (e.g. "not a valid application") | 32-bit host loading 64-bit DLL (or vice versa). | This solution is **x64 only**. Build both the plugin and the test host for **x64** (Debug or Release). |
 
 Full narrative and technical details: **docs/logs.md**.
 
@@ -40,7 +40,7 @@ Follow these steps when adding another library (e.g. libFoo) to the plugin.
   - If the pack provides **.lib** (import libraries): add the folder that contains `.lib` to **Additional Library Directories** and add the `.lib` name(s) to **Additional Dependencies**.  
   - If the pack provides **only .dll** (like the official OpenCV Windows pack): you must **generate** the import lib from the DLL (see "If the pack has only DLLs" below).
 
-### 3. Wire the project (MyDll1.vcxproj)
+### 3. Wire the project (PluginEngine.vcxproj)
 
 - **C/C++ → General → Additional Include Directories:** Add the include path (e.g. `$(SolutionDir)third_party\libfoo\include` or `$(LibFooDir)\include` if using a props file).
 - **Linker → General → Additional Library Directories:** Add the folder that contains the `.lib` file(s).
@@ -132,7 +132,7 @@ This creates `third_party\opencv\build\x64\generated_lib\opencv_world410d.lib` a
 
 The project is set for OpenCV **4.10** (`410`). For 4.11, 4.12, etc.:
 
-1. Edit **MyDll1/MyDll1.vcxproj**: replace `410` with your version in **Additional Dependencies** and in the **post-build** copy commands.
+1. Edit **PluginEngine/PluginEngine.vcxproj**: replace `410` with your version in **Additional Dependencies** and in the **post-build** copy commands.
 2. If the script generates a different base name, adjust the script or the vcxproj so the linked lib and copied DLL names match.
 
 If your pack uses **vc16** instead of **vc15**, replace `vc15` with `vc16` in the vcxproj (include path, library path, DLL copy path).
@@ -146,11 +146,11 @@ If your pack uses **vc16** instead of **vc15**, replace `vc15` with `vc16` in th
 
 ### 7. Use in code
 
-Include OpenCV only in **src/** (e.g. `plugin_impl.cpp`), not in `include/MyDll1_API.h`:
+Include OpenCV only in **src/** (e.g. `plugin_impl.cpp`), not in `include/PluginEngine_API.h`:
 
 ```cpp
 #include "pch.h"
-#include "MyDll1_API.h"
+#include "PluginEngine_API.h"
 #include <opencv2/opencv.hpp>
 ```
 
