@@ -6,7 +6,7 @@ A Windows x64 plugin DLL built with Visual Studio. Exposes a C API for version a
 
 ### Workflow (overview)
 
-PluginEngine is the **origin**; hosts load it and can add multiple plugins. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+PluginEngine is the **origin**; hosts load it and can add multiple plugins. The engine (and your plugins) can depend on **third-party / external software** (e.g. OpenCV)—see `third_party/` and [third_party/README.md](third_party/README.md). Full picture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```mermaid
 flowchart TD
@@ -16,6 +16,9 @@ flowchart TD
     Core --> I[Initialize]
     Core --> S[Shutdown]
     Core --> G[GetThirdPartyCheck]
+
+    Origin -.->|uses| ThirdParty[Third-party / external libs]
+    ThirdParty --> T1[OpenCV, etc.]
 
     Core --> Hosts[Hosts]
     Hosts --> H1[PluginEngineTestHost]
@@ -34,6 +37,8 @@ flowchart TD
 
     style Origin fill:#e3f2fd,stroke:#0277bd,stroke-width:3px
     style Core fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style ThirdParty fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style T1 fill:#ffe0b2,stroke:#e65100
     style Hosts fill:#f5f5f5,stroke:#424242,stroke-width:2px
     style H1 fill:#c8e6c9,stroke:#2e7d32
     style H2 fill:#c8e6c9,stroke:#2e7d32
@@ -96,6 +101,7 @@ flowchart TD
 | **addins/OfficeAddInCpp/** | C++ COM add-in for PowerPoint and Excel; loads PluginEngine.dll. See [addins/README.md](addins/README.md). |
 | **docs/**  | [README](docs/README.md), [Architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [PPT_EXCEL_ADDINS](docs/PPT_EXCEL_ADDINS.md) |
 | **tests/** | Test host app and [test instructions](tests/README.md) |
+| **third_party/** | External libs (e.g. OpenCV). For plugin development you often need third-party software—see [third_party/README.md](third_party/README.md). |
 
 ## Requirements
 

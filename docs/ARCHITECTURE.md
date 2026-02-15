@@ -2,7 +2,7 @@
 
 ## PluginEngine hierarchy (build any Windows plugin on top)
 
-**PluginEngine** is the **origin**: one core engine DLL at the top. Below it sits the **Core** (stable C API); hosts load the engine and can add multiple plugins. Any Windows host (Office add-in, test host, or your own app) can build on top of it.
+**PluginEngine** is the **origin**: one core engine DLL at the top. Below it sits the **Core** (stable C API); hosts load the engine and can add multiple plugins. The engine (and your plugins) can **use third-party / external software** (e.g. OpenCV). Any Windows host (Office add-in, test host, or your own app) can build on top of it.
 
 ```mermaid
 flowchart TD
@@ -12,6 +12,9 @@ flowchart TD
     Core --> I[Initialize]
     Core --> S[Shutdown]
     Core --> G[GetThirdPartyCheck]
+
+    Origin -.->|uses| ThirdParty[Third-party / external libs]
+    ThirdParty --> T1[OpenCV, etc.]
 
     Core --> Hosts[Hosts]
     Hosts --> H1[PluginEngineTestHost]
@@ -30,6 +33,8 @@ flowchart TD
 
     style Origin fill:#e3f2fd,stroke:#0277bd,stroke-width:3px
     style Core fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style ThirdParty fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style T1 fill:#ffe0b2,stroke:#e65100
     style Hosts fill:#f5f5f5,stroke:#424242,stroke-width:2px
     style H1 fill:#c8e6c9,stroke:#2e7d32
     style H2 fill:#c8e6c9,stroke:#2e7d32
@@ -46,6 +51,7 @@ flowchart TD
 | Layer | Role |
 |-------|------|
 | **PluginEngine (DLL)** | Core: C API (version, lifecycle, third‑party check). No UI, no host-specific code. |
+| **Third-party / external** | External libs the engine or plugins use (e.g. OpenCV in `third_party/`). See [third_party/README.md](../third_party/README.md). Add your own for plugin development. |
 | **PluginEngineTestHost** | Console .exe that loads the DLL and tests the API. Use for development and CI. |
 | **OfficeAddInCpp** | COM add-in for PowerPoint/Excel (and Word). Loads PluginEngine.dll, provides ribbon/commands. Hosts **multiple in-process plugins** (e.g. PptExport, ExcelCharts, WordTemplates, Common)—add your own the same way. |
 | **Your plugin** | Any Windows app or add-in that loads PluginEngine.dll and calls the C API. Same contract as the test host. |
