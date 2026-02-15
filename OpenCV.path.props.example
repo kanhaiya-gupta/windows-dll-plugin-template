@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Copy this file to OpenCV.path.props and set OpenCVDir to your OpenCV root.
+       OpenCV root = the folder that contains "build" (so build/include and build/x64/vc15 exist under it).
+       Use forward slashes or backslashes; use full path if you have spaces. -->
+  <PropertyGroup>
+    <OpenCVDir>C:/path/to/opencv</OpenCVDir>
+  </PropertyGroup>
+</Project>
